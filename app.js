@@ -29,13 +29,13 @@ var connector = new builder.ChatConnector({
     appPassword: process.env.MICROSOFT_APP_PASSWORD
 });
 
-var jenkins = jenkinsapi.init("http://" + process.env.JENKINS_TOKEN + "@" + process.env.JENKINS_URL);
+var jenkins = jenkinsapi.init("https://" + process.env.JENKINS_TOKEN + "@" + process.env.JENKINS_URL);
 
 // Listen for messages from users
 server.post('/api/messages', connector.listen());
 
 function getJobUrl(job) {
-    return "[" + job + "](http://" + process.env.JENKINS_URL + "/job/" + job + ")";
+    return "[" + job + "](https://" + process.env.JENKINS_URL + "/job/" + job + ")";
 }
 
 function selectMessage(event, query) {
