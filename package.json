@@ -1,0 +1,27 @@
+{
+  "name": "sx-bot",
+  "version": "1.0.0",
+  "description": "Sitex bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@git.mysitex.com:7999/common/sx-bot.git"
+  },
+  "author": "dsaponenko",
+  "license": "ISC",
+  "dependencies": {
+    "botbuilder": "^3.11.0",
+    "dotenv": "^4.0.0",
+    "fs": "0.0.1-security",
+    "jenkins-api": "^0.3.1",
+    "nconf": "^0.8.5",
+    "node-autostart": "^3.0.3",
+    "process-env": "^1.1.0",
+    "restify": "^6.2.3",
+    "url": "^0.11.0",
+    "velocityjs": "^0.9.6"
+  }
+}

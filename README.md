@@ -1,2 +1,2 @@
 # jenbot
-Messager bot  for Jenkins CI
+Messenger bot  for Jenkins CI

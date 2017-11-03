@@ -1,0 +1,45 @@
+{
+  "chats": [
+    {
+      "address": {
+        "id": "93e81591ab2d4b478cd56c2a77a342f8|0000000",
+        "channelId": "webchat",
+        "user": {
+          "id": "IbA5Avm7WEN",
+          "name": "You"
+        },
+        "conversation": {
+          "id": "93e81591ab2d4b478cd56c2a77a342f8"
+        },
+        "bot": {
+          "id": "sx-bot@eNmphw-osGQ",
+          "name": "sx-bot"
+        },
+        "serviceUrl": "https://webchat.botframework.com/"
+      },
+      "name": "smev",
+      "check": [
+        "test",
+        "smev-core/job/dev",
+        "smev-pmv/job/dev",
+        "smev-ppu/job/dev",
+        "smev-lk/job/dev",
+        "smev-bpms/job/dev",
+        "smev-rkt/job/dev",
+        "smev-sir/job/dev",
+        "smev-kf/job/dev"
+      ],
+      "build": {
+        "p": "test"
+      },
+      "buildParametrized": {
+        "dev": "update-smev-dev",
+        "tp": "update-smev-tp",
+        "test": "update-smev-test"
+      },
+      "computers": [
+        "smev-01"
+      ]
+    }
+  ]
+}
