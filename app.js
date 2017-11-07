@@ -178,13 +178,6 @@ function getChatOptions(channelId) {
     return null;
 }
 
-var callback = function (err, data) {
-    if (err) {
-        return console.log(err);
-    }
-    console.log(data)
-};
-
 var bot = new builder.UniversalBot(connector, function (session) {
     var message = session.message.text;
     var command = findCommand(message);
@@ -264,6 +257,16 @@ var bot = new builder.UniversalBot(connector, function (session) {
             }
 
             if (job) {
+                var callback = function (err, data) {
+                    if (err) {
+                        return console.log(err);
+                    }
+
+                    if (data.queueId) {
+                        session.conversationData.queued[job] = data.queueId;
+                        session.save();
+                    }
+                };
                 //todo разобраться с параметрами
                 var params = {depth: 1};
                 if (isBuildJob) {
@@ -297,8 +300,17 @@ var bot = new builder.UniversalBot(connector, function (session) {
                 job = chatOptions.buildParametrized[args[0]];
             }
 
-            if (job) {
-                jenkins.stop_build(job, callback);
+            if (job && session.conversationData.queued[job]) {
+                var callback = function (err, data) {
+                    if (err) {
+                        return console.log(err);
+                    }
+
+                    console.log(data)
+                };
+                jenkins.stop_build(job, session.conversationData.queued[job], callback);
+                session.conversationData.queued[job] = null;
+                session.save();
             }
             break;
     }
