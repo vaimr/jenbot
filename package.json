@@ -11,7 +11,7 @@
     "url": "git@github.com:vaimr/jenbot.git"
   },
   "author": "dsaponenko",
-  "license": "GNU GPL",
+  "license": "GPL-3.0",
   "dependencies": {
     "botbuilder": "^3.11.0",
     "dotenv": "^4.0.0",
