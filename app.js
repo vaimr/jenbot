@@ -136,12 +136,12 @@ var jenkinsHook = function (req, res) {
 server.get('/api/events', jenkinsHook);
 
 function findCommand(message) {
-    var match = /\.(\w+)\s*/.exec(message);
+    var match = /(\w+)\s*/.exec(message);
     return match !== null ? match[1] : null;
 }
 
 function findArgs(message) {
-    var match = /\.\w+\s+(.*)/.exec(message);
+    var match = /\w+\s+(.*)/.exec(message);
     return match !== null ? match[1].split(" ") : [];
 }
 
@@ -158,6 +158,8 @@ function doInit(session, project) {
                     }
                     console.log('Чат ' + project + ':' + session.message.address + ' проинициализирован');
                 });
+                session.conversationData['project'] = project;
+                session.save();
                 return true;
             }
 
@@ -191,7 +193,6 @@ function preInit(session) {
 var bot = new builder.UniversalBot(connector, function (session) {
     preInit(session);
 
-
     var message = session.message.text;
     var command = findCommand(message);
     var args = findArgs(message);
@@ -203,7 +204,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
     }
     var chatOptions = getChatOptions(session.message.address.channelId);
     if (chatOptions === null && command !== 'init' && command !== 'help') {
-        session.send('Неизвестный идентификатор чата ' + session.message.address.channelId + ". Отправьте боту .init **&lt;код чата&gt;**");
+        session.send('Неизвестный идентификатор чата ' + session.message.address.channelId + ". Отправьте боту init **&lt;код чата&gt;**");
         return
     }
     var job;
