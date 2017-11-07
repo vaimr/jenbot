@@ -145,18 +145,18 @@ function findArgs(message) {
     return match !== null ? match[1].split(" ") : [];
 }
 
-function doInit(session, args) {
+function doInit(session, project) {
     if (0 < args.length) {
         for (var i in chatsConfig) {
             var chat = chatsConfig[i];
-            if (chat.name === args[0]) {
+            if (chat.name === project) {
                 chatsConfig[i].address = session.message.address;
                 nconf.save(function (err) {
                     if (err) {
                         console.error(err.message);
                         return;
                     }
-                    console.log('Чат ' + args[0] + ':' + session.message.address + ' проинициализирован');
+                    console.log('Чат ' + project + ':' + session.message.address + ' проинициализирован');
                 });
                 return true;
             }
@@ -178,7 +178,20 @@ function getChatOptions(channelId) {
     return null;
 }
 
+function preInit(session) {
+    if (!session.conversationData['queued']) {
+        session.conversationData['queued'] = [];
+    }
+    if (session.conversationData['project'] && getChatOptions(session.message.address.channelId) === null) {
+        doInit(session, session.conversationData['project']);
+    }
+    session.save();
+}
+
 var bot = new builder.UniversalBot(connector, function (session) {
+    preInit(session);
+
+
     var message = session.message.text;
     var command = findCommand(message);
     var args = findArgs(message);
@@ -221,7 +234,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
         case 'init':
             if (args.length < 1) {
                 session.send("Не указан код чата")
-            } else if (doInit(session, args)) {
+            } else if (doInit(session, args[0])) {
                 session.send("Бот готов к работе")
             } else {
                 session.send("Бот не инициализирован. Проверьте конфигурацию")
@@ -315,6 +328,8 @@ var bot = new builder.UniversalBot(connector, function (session) {
             break;
     }
 });
+
+bot.set('persistConversationData', true);
 
 function sendProactiveMessage(address, message) {
     console.log(message);
