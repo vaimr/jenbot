@@ -49,6 +49,8 @@ function selectMessage(event, query) {
             return 'Проблема со сборщиком ' + query.computer;
         case 'jenkins.computer.offline':
             return 'Сборщик ' + query.computer + ' выключен';
+        case 'jenkins.computer.online':
+            return 'Сборщик ' + query.computer + ' включен';
 
         case 'jenkins.shutdown':
             return 'Дженкинс выключается';
@@ -136,12 +138,12 @@ var jenkinsHook = function (req, res) {
 server.get('/api/events', jenkinsHook);
 
 function findCommand(message) {
-    var match = /jenbot (\w+)\s*/.exec(message);
+    var match = /\w+\s+(\w+)\s*/.exec(message);
     return match !== null ? match[1] : null;
 }
 
 function findArgs(message) {
-    var match = /jenbot \w+\s+(.*)/.exec(message);
+    var match = /\w+\s+\w+\s+(.*)/.exec(message);
     return match !== null ? match[1].split(" ") : [];
 }
 
@@ -172,7 +174,7 @@ function doInit(session, project) {
 function getChatOptions(channelId) {
     for (var i in chatsConfig) {
         var chat = chatsConfig[i];
-        if (chat.address.channelId === channelId) {
+        if (chat.address !== null && chat.address.channelId === channelId) {
             return chat;
         }
     }
