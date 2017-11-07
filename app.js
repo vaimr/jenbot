@@ -252,9 +252,10 @@ var bot = new builder.UniversalBot(connector, function (session) {
                 chatOptions.check.forEach(function (chJob) {
                     if (chJob === args[0]) {
                         job = chJob;
-                        isBuildJob = true;
                     }
                 });
+            } else {
+                isBuildJob = true;
             }
             if (!job) {
                 job = chatOptions.buildParametrized[args[0]];
