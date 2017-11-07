@@ -178,6 +178,13 @@ function getChatOptions(channelId) {
     return null;
 }
 
+var callback = function (err, data) {
+    if (err) {
+        return console.log(err);
+    }
+    console.log(data)
+};
+
 var bot = new builder.UniversalBot(connector, function (session) {
     var message = session.message.text;
     var command = findCommand(message);
@@ -193,6 +200,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
         session.send('Неизвестный идентификатор чата ' + session.message.address.channelId + ". Отправьте боту .init **&lt;код чата&gt;**");
         return
     }
+    var job;
     switch (command) {
         case 'help':
             fs.readFile("help.md", "utf8", function (err, data) {
@@ -237,14 +245,8 @@ var bot = new builder.UniversalBot(connector, function (session) {
             });
             break;
         case 'build':
-            var callback = function (err, data) {
-                if (err) {
-                    return console.log(err);
-                }
-                console.log(data)
-            };
             var isParametrized = false;
-            var job = chatOptions.build[args[0]];
+            job = chatOptions.build[args[0]];
             if (!job) {
                 chatOptions.check.forEach(function (chJob) {
                     if (chJob === args[0]) {
@@ -261,7 +263,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
                 if (isParametrized) {
                     if (1 < args.length) {
                         //todo разобраться с параметрами
-                        var params = {depth: 1, delay: 600};
+                        var params = {depth: 1, delay: process.env.BUILD_DELAY || '600sec'};
                         args.forEach(function (t) {
                             if (t !== args[0]) {
                                 params[t] = true
@@ -275,6 +277,24 @@ var bot = new builder.UniversalBot(connector, function (session) {
                 } else {
                     jenkins.build(job, callback);
                 }
+            }
+            break;
+        case 'stop':
+            var job;
+            job = chatOptions.build[args[0]];
+            if (!job) {
+                chatOptions.check.forEach(function (chJob) {
+                    if (chJob === args[0]) {
+                        job = chJob;
+                    }
+                });
+            }
+            if (!job) {
+                job = chatOptions.buildParametrized[args[0]];
+            }
+
+            if (job) {
+                jenkins.stop_build(job, callback);
             }
             break;
     }
