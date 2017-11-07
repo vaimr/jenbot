@@ -175,7 +175,6 @@ function getChatOptions(channelId) {
         }
     }
 
-    console.log('Неизвестный идентификатор чата ' + channelId + ". Отправьте боту .init _код чата_");
     return null;
 }
 
@@ -191,6 +190,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
     }
     var chatOptions = getChatOptions(session.message.address.channelId);
     if (chatOptions === null && command !== 'init' && command !== 'help') {
+        console.log('Неизвестный идентификатор чата ' + channelId + ". Отправьте боту .init **&lt;код чата&gt;**");
         return
     }
     switch (command) {
