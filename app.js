@@ -136,12 +136,12 @@ var jenkinsHook = function (req, res) {
 server.get('/api/events', jenkinsHook);
 
 function findCommand(message) {
-    var match = /(\w+)\s*/.exec(message);
+    var match = /jenbot (\w+)\s*/.exec(message);
     return match !== null ? match[1] : null;
 }
 
 function findArgs(message) {
-    var match = /\w+\s+(.*)/.exec(message);
+    var match = /jenbot \w+\s+(.*)/.exec(message);
     return match !== null ? match[1].split(" ") : [];
 }
 
