@@ -13,9 +13,9 @@ nconf.use('file', {file: './config.json'});
 nconf.load();
 var chatsConfig = nconf.get('chats');
 
-autostart.isAutostartEnabled(env.process.npm_package_name, function (err, isEnabled) {
+autostart.isAutostartEnabled(process.env.npm_package_name, function (err, isEnabled) {
     if (!isEnabled) {
-        autostart.enableAutostart(env.process.npm_package_name, 'node app.js', process.cwd(), function (err) {
+        autostart.enableAutostart(process.env.npm_package_name, 'npm start', process.cwd(), function (err) {
             if(err) console.error(err);
             console.log('Autostart is jenbot ' + isEnabled ? 'enabled' : 'not enabled');
         });

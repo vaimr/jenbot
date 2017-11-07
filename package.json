@@ -1,17 +1,17 @@
 {
-  "name": "sx-bot",
+  "name": "jenbot",
   "version": "1.0.0",
-  "description": "Sitex bot",
-  "main": "index.js",
+  "description": "Jenkins messenger bot",
+  "main": "app.js",
   "scripts": {
-    "test": "test"
+    "start": "node app.js"
   },
   "repository": {
     "type": "git",
-    "url": "ssh://git@git.mysitex.com:7999/common/sx-bot.git"
+    "url": "git@github.com:vaimr/jenbot.git"
   },
   "author": "dsaponenko",
-  "license": "ISC",
+  "license": "GNU GPL",
   "dependencies": {
     "botbuilder": "^3.11.0",
     "dotenv": "^4.0.0",
