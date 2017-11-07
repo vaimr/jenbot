@@ -246,41 +246,44 @@ var bot = new builder.UniversalBot(connector, function (session) {
             break;
         case 'build':
             var isParametrized = false;
+            var isBuildJob = false;
             job = chatOptions.build[args[0]];
             if (!job) {
                 chatOptions.check.forEach(function (chJob) {
                     if (chJob === args[0]) {
                         job = chJob;
+                        isBuildJob = true;
                     }
                 });
             }
             if (!job) {
                 job = chatOptions.buildParametrized[args[0]];
                 isParametrized = true;
+                isBuildJob = true;
             }
 
             if (job) {
+                //todo разобраться с параметрами
+                var params = {depth: 1};
+                if (isBuildJob) {
+                    params['delay'] = process.env.BUILD_DELAY || '600sec';
+                }
                 if (isParametrized) {
                     if (1 < args.length) {
-                        //todo разобраться с параметрами
-                        var params = {depth: 1, delay: process.env.BUILD_DELAY || '600sec'};
                         args.forEach(function (t) {
                             if (t !== args[0]) {
                                 params[t] = true
                             }
                         });
                         console.log(params);
-                        jenkins.build_with_params(job, params, callback);
-                    } else {
-                        jenkins.build_with_params(job, callback);
                     }
+                    jenkins.build_with_params(job, params, callback);
                 } else {
-                    jenkins.build(job, callback);
+                    jenkins.build(job, params, callback);
                 }
             }
             break;
         case 'stop':
-            var job;
             job = chatOptions.build[args[0]];
             if (!job) {
                 chatOptions.check.forEach(function (chJob) {
