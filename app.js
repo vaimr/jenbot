@@ -146,7 +146,7 @@ function findArgs(message) {
 }
 
 function doInit(session, project) {
-    if (0 < args.length) {
+    if (project) {
         for (var i in chatsConfig) {
             var chat = chatsConfig[i];
             if (chat.name === project) {
