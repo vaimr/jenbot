@@ -7,6 +7,8 @@ var fs = require('fs');
 var URL = require('url');
 var Velocity = require('velocityjs');
 var autostart = require('node-autostart')
+var ping = require ("net-ping");
+var lookup = require('dns-lookup');
 
 var nconf = require('nconf');
 nconf.use('file', {file: './config.json'});
@@ -328,6 +330,23 @@ var bot = new builder.UniversalBot(connector, function (session) {
                 session.conversationData.queued[job] = null;
                 session.save();
             }
+            break;
+        case 'ping':
+            args.forEach(function (t) {
+                lookup(t, function (err, address, family) {
+                    if (err) {
+                        sendProactiveMessage(chatOptions.address, t + ": not resolved " + err);
+                    }
+                    var session = ping.createSession();
+
+                    session.pingHost(t, function (error, target) {
+                        if (error)
+                            sendProactiveMessage(chatOptions.address, target + ": " + error.toString() + " (" + address + ")");
+                        else
+                            sendProactiveMessage(chatOptions.address, target + ": Alive (" + address + ")");
+                    });
+                });
+            });
             break;
     }
 });

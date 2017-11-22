@@ -1,22 +1,7 @@
 {
   "chats": [
     {
-      "address": {
-        "id": "93e81591ab2d4b478cd56c2a77a342f8|0000000",
-        "channelId": "webchat",
-        "user": {
-          "id": "IbA5Avm7WEN",
-          "name": "You"
-        },
-        "conversation": {
-          "id": "93e81591ab2d4b478cd56c2a77a342f8"
-        },
-        "bot": {
-          "id": "sx-bot@eNmphw-osGQ",
-          "name": "sx-bot"
-        },
-        "serviceUrl": "https://webchat.botframework.com/"
-      },
+      "address": {},
       "name": "smev",
       "check": [
         "test",

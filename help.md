@@ -5,3 +5,4 @@
     #foreach($job in $context.jobs)
     build $job
     #end
+- **ping &lt;hostname&gt; &lt;hostname...&gt;** - пинг сервера. Например для определения IP    
