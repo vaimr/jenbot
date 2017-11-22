@@ -4,7 +4,6 @@
       "address": {},
       "name": "smev",
       "check": [
-        "test",
         "smev-core/job/dev",
         "smev-pmv/job/dev",
         "smev-ppu/job/dev",
@@ -12,15 +11,16 @@
         "smev-bpms/job/dev",
         "smev-rkt/job/dev",
         "smev-sir/job/dev",
-        "smev-kf/job/dev"
+        "smev-kf/job/dev",
+        "smev-pgu2/job/dev",
+        "smev-node/job/dev"
       ],
-      "build": {
-        "p": "test"
-      },
+      "build": {},
       "buildParametrized": {
         "dev": "update-smev-dev",
         "tp": "update-smev-tp",
-        "test": "update-smev-test"
+        "test": "update-smev-test",
+        "pgu2": "smev-pgu2-update"
       },
       "computers": [
         "smev-01"
