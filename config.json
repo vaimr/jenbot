@@ -25,6 +25,31 @@
       "computers": [
         "smev-01"
       ]
+    },
+    {
+      "address": {},
+      "name": "sevsmev",
+      "check": [
+        "crsmev-pgu/job/dev",
+        "sevsmev-ppu/job/dev",
+        "sevsmev-pgu/job/dev",
+        "sevsmev-sk/job/dev",
+        "sevsmev-rk/job/dev",
+        "sevsmev-kf/job/dev"
+      ],
+      "build": {},
+      "buildParametrized": {
+        "dev": "update-sevsmev-dev-docker",
+        "dev-cache": "sevsmev-dev-cache-clear",
+        "tp": "sevsmev-tp-update",
+        "test4": "sevsmev-test4-update",
+        "test": "sevsmev-test-update",
+        "node": "update-sevsmev-node",
+        "unit": "sevsmev_smevUnit_update",
+        "mku": "update-sevsmev-mku"
+      },
+      "computers": [
+      ]
     }
   ]
 }
