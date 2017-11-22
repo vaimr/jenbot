@@ -341,9 +341,9 @@ var bot = new builder.UniversalBot(connector, function (session) {
 
                         session.pingHost(address, function (error, target) {
                             if (error)
-                                sendProactiveMessage(chatOptions.address, target + ": " + error.toString() + " (" + address + ")");
+                                sendProactiveMessage(chatOptions.address, t + ": " + error.toString() + " (" + address + ")");
                             else
-                                sendProactiveMessage(chatOptions.address, target + ": Доступен (" + address + ")");
+                                sendProactiveMessage(chatOptions.address, t + ": Доступен (" + address + ")");
                         });
                     }
                 });
