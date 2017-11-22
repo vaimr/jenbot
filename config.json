@@ -1,7 +1,23 @@
 {
   "chats": [
     {
-      "address": {},
+      "address": {
+        "id": "1511362200310",
+        "channelId": "skype",
+        "user": {
+          "id": "29:1nKVroFhEpUSWPjCBYEiLtc9WouE7qOilM8bebIHQ0bo",
+          "name": "Сапоненко Денис"
+        },
+        "conversation": {
+          "isGroup": true,
+          "id": "19:9b108102a24643498d737908b30aacc8@thread.skype"
+        },
+        "bot": {
+          "id": "28:eada0676-e5b5-498e-9bdf-10f61d1b4c48",
+          "name": "jenbot"
+        },
+        "serviceUrl": "https://smba.trafficmanager.net/apis/"
+      },
       "name": "smev",
       "check": [
         "smev-core/job/dev",

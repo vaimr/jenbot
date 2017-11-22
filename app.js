@@ -176,7 +176,7 @@ function doInit(session, project) {
 function getChatOptions(channelId) {
     for (var i in chatsConfig) {
         var chat = chatsConfig[i];
-        if (chat.address !== null && chat.address.channelId === channelId) {
+        if (chat.address !== null && chat.address.id === channelId) {
             return chat;
         }
     }
@@ -188,7 +188,7 @@ function preInit(session) {
     if (!session.conversationData['queued']) {
         session.conversationData['queued'] = [];
     }
-    if (session.conversationData['project'] && getChatOptions(session.message.address.channelId) === null) {
+    if (session.conversationData['project'] && getChatOptions(session.message.address.id) === null) {
         doInit(session, session.conversationData['project']);
     }
     session.save();
