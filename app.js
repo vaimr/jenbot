@@ -206,9 +206,9 @@ var bot = new builder.UniversalBot(connector, function (session) {
     if (command === null) {
         return
     }
-    var chatOptions = getChatOptions(session.message.address.channelId);
+    var chatOptions = getChatOptions(session.message.address.id);
     if (chatOptions === null && command !== 'init' && command !== 'help') {
-        session.send('Неизвестный идентификатор чата ' + session.message.address.channelId + ". Отправьте боту init **&lt;код чата&gt;**");
+        session.send('Неизвестный идентификатор чата ' + session.message.address.id + ". Отправьте боту init **&lt;код чата&gt;**");
         return
     }
     var job;
