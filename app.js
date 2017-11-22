@@ -201,8 +201,8 @@ var bot = new builder.UniversalBot(connector, function (session) {
     var command = findCommand(message);
     var args = findArgs(message);
 
-    // console.log(command);
-    // console.log(args);
+    console.log(command);
+    console.log(args);
     if (command === null) {
         return
     }
@@ -335,16 +335,17 @@ var bot = new builder.UniversalBot(connector, function (session) {
             args.forEach(function (t) {
                 lookup(t, function (err, address, family) {
                     if (err) {
-                        sendProactiveMessage(chatOptions.address, t + ": not resolved " + err);
-                    }
-                    var session = ping.createSession();
+                        sendProactiveMessage(chatOptions.address, t + ": недоступен " + err);
+                    } else {
+                        var session = ping.createSession();
 
-                    session.pingHost(t, function (error, target) {
-                        if (error)
-                            sendProactiveMessage(chatOptions.address, target + ": " + error.toString() + " (" + address + ")");
-                        else
-                            sendProactiveMessage(chatOptions.address, target + ": Alive (" + address + ")");
-                    });
+                        session.pingHost(address, function (error, target) {
+                            if (error)
+                                sendProactiveMessage(chatOptions.address, target + ": " + error.toString() + " (" + address + ")");
+                            else
+                                sendProactiveMessage(chatOptions.address, target + ": Доступен (" + address + ")");
+                        });
+                    }
                 });
             });
             break;
