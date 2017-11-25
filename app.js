@@ -326,6 +326,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
         case 'check':
         case 'ping':
         case 'commits':
+        case 'detail':
             session.beginDialog('/' + command);
             break;
         default:
