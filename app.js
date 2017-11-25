@@ -11,6 +11,7 @@ var ping = require ("net-ping");
 var lookup = require('dns-lookup');
 var when = require('when');
 var Client = require('node-rest-client').Client;
+var Set = require("collections/set");
 
 var nconf = require('nconf');
 var configFile = './config.json';
@@ -502,65 +503,82 @@ function getCommitsId(issueId, args, callback) {
 
 bot.dialog('/commits', [
     function (session) {
-        var message = session.message.text;
-        var args = findArgs(message);
-        var promises = [];
-        var resultMessage = '';
+        commits(session, false);
+    }
+]);
+bot.dialog('/detail', [
+    function (session) {
+        commits(session, true);
+    }
+]);
 
-        authJira(function (cookieValue) {
-            var headers = {
-                headers: {
-                    'cookie': cookieValue,
-                    "Content-Type": "application/json"
+function commits(session, detail) {
+    var message = session.message.text;
+    var args = findArgs(message);
+    var promises = [];
+    var resultMessage = '';
+
+    authJira(function (cookieValue) {
+        var headers = {
+            headers: {
+                'cookie': cookieValue,
+                "Content-Type": "application/json"
+            }
+        };
+        args.forEach(function (t) {
+            var deferred = when.defer();
+            getIssueId(t, headers, function (err, issueId) {
+                if (err) {
+                    resultMessage = 'Jira недоступна';
+                    deferred.resolve('ok');
+                    return;
                 }
-            };
-            args.forEach(function (t) {
-                var deferred = when.defer();
-                getIssueId(t, headers, function (err, issueId) {
+                getCommitsId(issueId, headers, function (err, repos) {
                     if (err) {
                         resultMessage = 'Jira недоступна';
                         deferred.resolve('ok');
                         return;
                     }
-                    getCommitsId(issueId, headers, function (err, repos) {
-                        if (err) {
-                            resultMessage = 'Jira недоступна';
-                            deferred.resolve('ok');
-                            return;
-                        }
 
-                        repos.forEach(function (repo) {
-                            resultMessage += "**[" + repo['name'] + "](" + repo['url'] + ")**<br/>";
-                            repo['commits'].forEach(function (commit) {
-                                commit['files'].forEach(function (file) {
+                    repos.forEach(function (repo) {
+                        resultMessage += "**[" + repo['name'] + "](" + repo['url'] + ")**<br/>";
+                        var files = new Set();
+                        repo['commits'].forEach(function (commit) {
+                            commit['files'].forEach(function (file) {
+                                if (detail) {
                                     switch (file['changeType']) {
                                         case 'MODIFIED':
-                                            resultMessage += '<span style="color:#4C90D5">' + file['path'] + '</span><br/>';
+                                            resultMessage += '~' + file['path'] + '<br/>';
                                             break;
                                         case 'ADDED':
-                                            resultMessage += '<span style="color:#26A31D">' + file['path'] + '</span><br/>';
+                                            resultMessage += '+' + file['path'] + '<br/>';
                                             break;
                                         case 'DELETED':
-                                            resultMessage += '<span style="color:#DE3F22">' + file['path'] + '</span><br/>';
+                                            resultMessage += '-' + file['path'] + '<br/>';
                                             break;
                                         default:
-                                            resultMessage += file['path'] + '<br/>';
+                                            resultMessage += file['changeType'] + ' ' + file['path'] + '<br/>';
                                     }
-                                });
+                                } else {
+                                    files.add(file['path']);
+                                }
                             });
                         });
-                        deferred.resolve('ok');
+                        files.forEach(function (file) {
+                            resultMessage += file + '<br/>';
+                        })
                     });
+                    deferred.resolve('ok');
                 });
-                promises.push(deferred.promise);
             });
-
-            when.all(promises).then(function () {
-                session.endDialog(resultMessage);
-            });
+            promises.push(deferred.promise);
         });
-    }
-]);
+
+        when.all(promises).then(function () {
+            session.endDialog(resultMessage);
+        });
+    });
+}
 
 function sendProactiveMessage(address, message) {
     console.log(message);
