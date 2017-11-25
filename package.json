@@ -21,9 +21,11 @@
     "nconf": "^0.8.5",
     "net-ping": "^1.2.1",
     "node-autostart": "^3.0.3",
+    "node-rest-client": "^3.1.0",
     "process-env": "^1.1.0",
     "restify": "^6.2.3",
     "url": "^0.11.0",
-    "velocityjs": "^0.9.6"
+    "velocityjs": "^0.9.6",
+    "when": "^3.7.8"
   }
 }

@@ -1,23 +1,7 @@
 {
   "chats": [
     {
-      "address": {
-        "id": "1511362200310",
-        "channelId": "skype",
-        "user": {
-          "id": "29:1nKVroFhEpUSWPjCBYEiLtc9WouE7qOilM8bebIHQ0bo",
-          "name": "Сапоненко Денис"
-        },
-        "conversation": {
-          "isGroup": true,
-          "id": "19:9b108102a24643498d737908b30aacc8@thread.skype"
-        },
-        "bot": {
-          "id": "28:eada0676-e5b5-498e-9bdf-10f61d1b4c48",
-          "name": "jenbot"
-        },
-        "serviceUrl": "https://smba.trafficmanager.net/apis/"
-      },
+      "address": {},
       "name": "smev",
       "check": [
         "smev-core/job/dev",
@@ -40,31 +24,6 @@
       },
       "computers": [
         "smev-01"
-      ]
-    },
-    {
-      "address": {},
-      "name": "sevsmev",
-      "check": [
-        "crsmev-pgu/job/dev",
-        "sevsmev-ppu/job/dev",
-        "sevsmev-pgu/job/dev",
-        "sevsmev-sk/job/dev",
-        "sevsmev-rk/job/dev",
-        "sevsmev-kf/job/dev"
-      ],
-      "build": {},
-      "buildParametrized": {
-        "dev": "update-sevsmev-dev-docker",
-        "dev-cache": "sevsmev-dev-cache-clear",
-        "tp": "sevsmev-tp-update",
-        "test4": "sevsmev-test4-update",
-        "test": "sevsmev-test-update",
-        "node": "update-sevsmev-node",
-        "unit": "sevsmev_smevUnit_update",
-        "mku": "update-sevsmev-mku"
-      },
-      "computers": [
       ]
     }
   ]

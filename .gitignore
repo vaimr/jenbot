@@ -59,7 +59,7 @@ typings/
 
 *.iml
 
-/overlays/
-/.idea/
-/install/
-/node_modules/
+overlays/
+.idea/
+install/
+/.config.json

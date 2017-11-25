@@ -9,20 +9,30 @@ var Velocity = require('velocityjs');
 var autostart = require('node-autostart')
 var ping = require ("net-ping");
 var lookup = require('dns-lookup');
+var when = require('when');
+var Client = require('node-rest-client').Client;
 
 var nconf = require('nconf');
-nconf.use('file', {file: './config.json'});
-nconf.load();
-var chatsConfig = nconf.get('chats');
-
-autostart.isAutostartEnabled(process.env.npm_package_name, function (err, isEnabled) {
-    if (!isEnabled) {
-        autostart.enableAutostart(process.env.npm_package_name, 'npm start', process.cwd(), function (err) {
-            if(err) console.error(err);
-            console.log('Autostart is jenbot ' + isEnabled ? 'enabled' : 'not enabled');
-        });
+var configFile = './config.json';
+var chatsConfig;
+fs.exists(process.env.CONFIG_FILE, function(exists) {
+    if (exists) {
+        configFile = process.env.CONFIG_FILE;
+        console.log ('Loading config: ' + configFile);
     }
+    nconf.use('file', {file: configFile});
+    nconf.load();
+    chatsConfig = nconf.get('chats');
 });
+
+// autostart.isAutostartEnabled(process.env.npm_package_name, function (err, isEnabled) {
+//     if (!isEnabled) {
+//         autostart.enableAutostart(process.env.npm_package_name, 'npm start', process.cwd(), function (err) {
+//             if(err) console.error(err);
+//             console.log('Autostart is jenbot ' + isEnabled ? 'enabled' : 'not enabled');
+//         });
+//     }
+// });
 
 // Setup Restify Server
 var server = restify.createServer();
@@ -60,7 +70,11 @@ function selectMessage(event, query) {
             return 'Дженкинс запущен';
 
         case 'jenkins.queue.enter.waiting':
-            return 'Задача ' + getJobUrl(query.job) + ' поставлена в очередь';
+            var t = new Date().getTime() + 1000;
+            if (t < parseInt(query.timestamp)) {
+                return 'Задача ' + getJobUrl(query.job) + ' поставлена в очередь';
+            }
+            break;
         case 'jenkins.queue.onleft':
             return query.cancelled==='true' ? 'Задача ' + getJobUrl(query.job) + ' удалена из очереди' : '';
 
@@ -213,29 +227,6 @@ var bot = new builder.UniversalBot(connector, function (session) {
     }
     var job;
     switch (command) {
-        case 'help':
-            fs.readFile("help.md", "utf8", function (err, data) {
-                var jobs = [];
-                if (chatOptions !== null) {
-                    for (var b in chatOptions.build) {
-                        jobs.push(b)
-                    }
-                    for (var b in chatOptions.buildParametrized) {
-                        jobs.push(b)
-                    }
-                    chatOptions.check.forEach(function (job) {
-                        jobs.push(job)
-                    });
-                }
-
-                var ast = Velocity.render(data, {
-                    "context": {
-                        "jobs": jobs
-                    }
-                });
-                session.send(ast);
-            });
-            break;
         case 'init':
             if (args.length < 1) {
                 session.send("Не указан код чата")
@@ -245,17 +236,8 @@ var bot = new builder.UniversalBot(connector, function (session) {
                 session.send("Бот не инициализирован. Проверьте конфигурацию")
             }
             break;
-        case 'check':
-            chatOptions.check.forEach(function (job) {
-                jenkins.last_build_info(job, function (err, data) {
-                    if (err) {
-                        return console.log(err);
-                    }
-                    session.send(getJobUrl(job) + ' ' + data.result);
-                });
-            });
-            break;
         case 'build':
+        case 'start':
             var isParametrized = false;
             var isBuildJob = false;
             job = chatOptions.build[args[0]];
@@ -277,11 +259,17 @@ var bot = new builder.UniversalBot(connector, function (session) {
             if (job) {
                 var callback = function (err, data) {
                     if (err) {
-                        return console.log(err);
+                        console.log(err);
+                        return;
                     }
 
-                    if (data.queueId) {
-                        session.conversationData.queued[job] = data.queueId;
+                    var queueId = data['queueId'];
+                    if (queueId) {
+                        if (!session.conversationData.queued || session.conversationData.queued instanceof Array) {
+                            session.conversationData.queued = {};
+                        }
+                        console.log(session.conversationData.queued);
+                        session.conversationData.queued[job] = queueId;
                         session.save();
                     }
                 };
@@ -306,6 +294,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
             }
             break;
         case 'stop':
+        case 'abort':
             job = chatOptions.build[args[0]];
             if (!job) {
                 chatOptions.check.forEach(function (chJob) {
@@ -318,46 +307,258 @@ var bot = new builder.UniversalBot(connector, function (session) {
                 job = chatOptions.buildParametrized[args[0]];
             }
 
+            console.log('cancel ' + job + ' ' + session.conversationData.queued[job]);
             if (job && session.conversationData.queued[job]) {
                 var callback = function (err, data) {
                     if (err) {
-                        return console.log(err);
+                        console.log(err);
+                        return;
                     }
 
                     console.log(data)
                 };
-                jenkins.stop_build(job, session.conversationData.queued[job], callback);
+                jenkins.cancel_item(session.conversationData.queued[job], callback);
                 session.conversationData.queued[job] = null;
                 session.save();
             }
             break;
+        case 'help':
+        case 'check':
         case 'ping':
-            args.forEach(function (t) {
-                lookup(t, function (err, address, family) {
-                    if (err) {
-                        sendProactiveMessage(chatOptions.address, t + ": недоступен " + err);
-                    } else {
-                        var session = ping.createSession();
-
-                        session.pingHost(address, function (error, target) {
-                            if (error)
-                                sendProactiveMessage(chatOptions.address, t + ": " + error.toString() + " (" + address + ")");
-                            else
-                                sendProactiveMessage(chatOptions.address, t + ": Доступен (" + address + ")");
-                        });
-                    }
-                });
-            });
+        case 'commits':
+            session.beginDialog('/' + command);
             break;
     }
 });
 
 bot.set('persistConversationData', true);
 
+bot.dialog('/help', [
+    function (session) {
+        fs.readFile("help.md", "utf8", function (err, data) {
+            var jobs = [];
+            var chatOptions = getChatOptions(session.message.address.id);
+            if (chatOptions !== null) {
+                for (var b in chatOptions.build) {
+                    jobs.push(b)
+                }
+                for (var b in chatOptions.buildParametrized) {
+                    jobs.push(b)
+                }
+                chatOptions.check.forEach(function (job) {
+                    jobs.push(job)
+                });
+            }
+
+            var ast = Velocity.render(data, {
+                "context": {
+                    "jobs": jobs
+                }
+            });
+            session.endDialog(ast);
+        });
+
+    }
+]);
+
+bot.dialog('/check', [
+    function (session) {
+        var chatOptions = getChatOptions(session.message.address.id);
+        var promises = [];
+        var resultMessage = '';
+
+        chatOptions.check.forEach(function (job) {
+            var deferred = when.defer();
+            jenkins.last_build_info(job, function (err, data) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    var status = data.result === 'SUCCESS' ? '😊' : '😣';
+                    resultMessage += getJobUrl(job) + ' ' + status + '<br/>';
+                }
+                deferred.resolve('ok');
+            });
+            promises.push(deferred.promise);
+        });
+
+        when.all(promises).then(function () {
+            session.endDialog(resultMessage);
+        });
+    }
+]);
+
+bot.dialog('/ping', [
+    function (session) {
+        var message = session.message.text;
+        var args = findArgs(message);
+        var promises = [];
+        var resultMessage = '';
+
+        args.forEach(function (t) {
+            var deferred = when.defer();
+            lookup(t, function (err, address, family) {
+                if (err) {
+                    resultMessage += t + ': недоступен ' + err + '<br/>';
+                    deferred.resolve('ok');
+                } else {
+                    var pingSession = ping.createSession();
+
+                    pingSession.pingHost(address, function (error, target) {
+                        if (error)
+                            resultMessage += t + ': ' + error.toString() + ' (' + address + ')<br/>';
+                        else
+                            resultMessage += t + ': Доступен (' + address + ')<br/>';
+                        deferred.resolve('ok');
+                    });
+                }
+            });
+            promises.push(deferred.promise);
+        });
+
+        when.all(promises).then(function () {
+            session.endDialog(resultMessage);
+        });
+    }
+]);
+
+function getRest(url, args, callback) {
+    var client = new Client();
+    var req = client.get(url, args, function (data, response) {
+        callback(null, data);
+    });
+
+    req.on('requestTimeout', function (req) {
+        console.log('request has expired');
+        req.abort();
+        callback('requestTimeout', null);
+    });
+
+    req.on('responseTimeout', function (res) {
+        console.log('response has expired');
+        callback('responseTimeout', null);
+    });
+
+    req.on('error', function (err) {
+        console.log('request error', err);
+        callback('error', null);
+    });
+}
+
+function getJiraUrl() {
+    return process.env.JIRA_URL.toLowerCase().startsWith('http') ? process.env.JIRA_URL :
+        'https://' + process.env.JIRA_URL;
+}
+
+function authJira(callback) {
+    var client = new Client();
+    var loginArgs = {
+        data: {
+            "username": process.env.JIRA_USER,
+            "password": process.env.JIRA_PASSWORD
+        },
+        headers: {
+            "Content-Type": "application/json"
+        }
+    };
+
+    client.post(getJiraUrl() + "/rest/auth/1/session", loginArgs, function(data, response){
+        if (response.statusCode === 200) {
+            var session = data.session;
+            callback(session.name + '=' + session.value);
+        } else {
+            throw "Login failed :(";
+        }
+    });
+}
+
+function getIssueId(issueNumber, args, callback) {
+    getRest(getJiraUrl() + '/rest/api/2/issue/' + issueNumber, args, function (err, data) {
+        callback(err, data['id']);
+    });
+}
+
+function getCommitsId(issueId, args, callback) {
+    getRest(getJiraUrl() +
+        '/rest/dev-status/latest/issue/detail?issueId=' + issueId +
+        '&applicationType=stash&dataType=repository', args, function (err, data) {
+        if (data.errorMessages) {
+            callback(data.errorMessages, null);
+            return;
+        }
+        if (data['detail'].length <= 0) {
+            callback(data['errors'], null);
+            return;
+        }
+        callback(err, data['detail'][0]['repositories']);
+    });
+}
+
+bot.dialog('/commits', [
+    function (session) {
+        var message = session.message.text;
+        var args = findArgs(message);
+        var promises = [];
+        var resultMessage = '';
+
+        authJira(function (cookieValue) {
+            var headers = {
+                headers: {
+                    'cookie': cookieValue,
+                    "Content-Type": "application/json"
+                }
+            };
+            args.forEach(function (t) {
+                var deferred = when.defer();
+                getIssueId(t, headers, function (err, issueId) {
+                    if (err) {
+                        resultMessage = 'Jira недоступна';
+                        deferred.resolve('ok');
+                        return;
+                    }
+                    getCommitsId(issueId, headers, function (err, repos) {
+                        if (err) {
+                            resultMessage = 'Jira недоступна';
+                            deferred.resolve('ok');
+                            return;
+                        }
+
+                        repos.forEach(function (repo) {
+                            resultMessage += "**[" + repo['name'] + "](" + repo['url'] + ")**<br/>";
+                            repo['commits'].forEach(function (commit) {
+                                commit['files'].forEach(function (file) {
+                                    switch (file['changeType']) {
+                                        case 'MODIFIED':
+                                            resultMessage += '<span style="color:#4C90D5">' + file['path'] + '</span><br/>';
+                                            break;
+                                        case 'ADDED':
+                                            resultMessage += '<span style="color:#26A31D">' + file['path'] + '</span><br/>';
+                                            break;
+                                        case 'DELETED':
+                                            resultMessage += '<span style="color:#DE3F22">' + file['path'] + '</span><br/>';
+                                            break;
+                                        default:
+                                            resultMessage += file['path'] + '<br/>';
+                                    }
+                                });
+                            });
+                        });
+                        deferred.resolve('ok');
+                    });
+                });
+                promises.push(deferred.promise);
+            });
+
+            when.all(promises).then(function () {
+                session.endDialog(resultMessage);
+            });
+        });
+    }
+]);
+
 function sendProactiveMessage(address, message) {
     console.log(message);
     var msg = new builder.Message().address(address);
     msg.text(message);
     msg.textLocale('ru-RU');
-    bot.send(msg);
+    // bot.send(msg);
 }
