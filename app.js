@@ -340,6 +340,7 @@ bot.dialog('/help', [
         var promises = [];
         var resultMessage = '';
         var deferred = when.defer();
+        promises.push(deferred.promise);
         fs.readFile("help.md", "utf8", function (err, data) {
             var jobs = [];
             var chatOptions = getChatOptions(session.message.address.id);
