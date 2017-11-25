@@ -25,14 +25,14 @@ fs.exists(process.env.CONFIG_FILE, function(exists) {
     chatsConfig = nconf.get('chats');
 });
 
-// autostart.isAutostartEnabled(process.env.npm_package_name, function (err, isEnabled) {
-//     if (!isEnabled) {
-//         autostart.enableAutostart(process.env.npm_package_name, 'npm start', process.cwd(), function (err) {
-//             if(err) console.error(err);
-//             console.log('Autostart is jenbot ' + isEnabled ? 'enabled' : 'not enabled');
-//         });
-//     }
-// });
+autostart.isAutostartEnabled(process.env.npm_package_name, function (err, isEnabled) {
+    if (!isEnabled) {
+        autostart.enableAutostart(process.env.npm_package_name, 'npm start', process.cwd(), function (err) {
+            if(err) console.error(err);
+            console.log('Autostart is jenbot ' + isEnabled ? 'enabled' : 'not enabled');
+        });
+    }
+});
 
 // Setup Restify Server
 var server = restify.createServer();
