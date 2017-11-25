@@ -212,7 +212,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
     preInit(session);
 
     var message = session.message.text;
-    var command = findCommand(message);
+    var command = findCommand(message).toLowerCase();
     var args = findArgs(message);
 
     console.log(command);
@@ -309,15 +309,14 @@ var bot = new builder.UniversalBot(connector, function (session) {
 
             console.log('cancel ' + job + ' ' + session.conversationData.queued[job]);
             if (job && session.conversationData.queued[job]) {
-                var callback = function (err, data) {
+                jenkins.cancel_item(session.conversationData.queued[job], function (err, data) {
                     if (err) {
                         console.log(err);
                         return;
                     }
 
                     console.log(data)
-                };
-                jenkins.cancel_item(session.conversationData.queued[job], callback);
+                });
                 session.conversationData.queued[job] = null;
                 session.save();
             }
@@ -337,13 +336,13 @@ bot.set('persistConversationData', true);
 
 bot.dialog('/help', [
     function (session) {
+        var chatOptions = getChatOptions(session.message.address.id);
         var promises = [];
         var resultMessage = '';
         var deferred = when.defer();
         promises.push(deferred.promise);
         fs.readFile("help.md", "utf8", function (err, data) {
             var jobs = [];
-            var chatOptions = getChatOptions(session.message.address.id);
             if (chatOptions !== null) {
                 for (var b in chatOptions.build) {
                     jobs.push(b)
