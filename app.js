@@ -328,6 +328,8 @@ var bot = new builder.UniversalBot(connector, function (session) {
         case 'commits':
             session.beginDialog('/' + command);
             break;
+        default:
+            session.beginDialog('/help');
     }
 });
 
@@ -560,5 +562,5 @@ function sendProactiveMessage(address, message) {
     var msg = new builder.Message().address(address);
     msg.text(message);
     msg.textLocale('ru-RU');
-    // bot.send(msg);
+    bot.send(msg);
 }
