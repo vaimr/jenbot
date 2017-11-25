@@ -337,6 +337,9 @@ bot.set('persistConversationData', true);
 
 bot.dialog('/help', [
     function (session) {
+        var promises = [];
+        var resultMessage = '';
+        var deferred = when.defer();
         fs.readFile("help.md", "utf8", function (err, data) {
             var jobs = [];
             var chatOptions = getChatOptions(session.message.address.id);
@@ -352,14 +355,16 @@ bot.dialog('/help', [
                 });
             }
 
-            var ast = Velocity.render(data, {
+            resultMessage = Velocity.render(data, {
                 "context": {
                     "jobs": jobs
                 }
             });
-            session.endDialog(ast);
+            deferred.resolve('ok');
         });
-
+        when.all(promises).then(function () {
+            session.endDialog(resultMessage);
+        });
     }
 ]);
 
