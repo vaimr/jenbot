@@ -14,6 +14,7 @@
   "license": "GPL-3.0",
   "dependencies": {
     "botbuilder": "^3.11.0",
+    "collections": "^5.0.7",
     "dns-lookup": "^0.1.0",
     "dotenv": "^4.0.0",
     "fs": "0.0.1-security",
