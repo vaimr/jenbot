@@ -15,7 +15,7 @@ var Set = require("collections/set");
 var log4js = require('log4js');
 log4js.configure({
     appenders: {
-        app: {type: 'dateFile', filename: 'app.log', pattern: '-yyyy-MM-dd'},
+        app: {type: 'dateFile', filename: process.env.LOGS_DIR + 'app.log', pattern: '-yyyy-MM-dd'},
         con: {type: 'console'}
         },
     categories: {default: {appenders: ['app', 'con'], level: 'info'}}
