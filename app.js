@@ -6,39 +6,53 @@ var jenkinsapi = require('jenkins-api');
 var fs = require('fs');
 var URL = require('url');
 var Velocity = require('velocityjs');
-var autostart = require('node-autostart')
-var ping = require ("net-ping");
+var autostart = require('node-autostart');
+var ping = require("net-ping");
 var lookup = require('dns-lookup');
 var when = require('when');
 var Client = require('node-rest-client').Client;
 var Set = require("collections/set");
+var log4js = require('log4js');
+log4js.configure({
+    appenders: {
+        app: {type: 'dateFile', filename: 'app.log', pattern: '-yyyy-MM-dd'},
+        con: {type: 'console'}
+        },
+    categories: {default: {appenders: ['app', 'con'], level: 'info'}}
+});
+
+var logger = log4js.getLogger('app');
 
 var nconf = require('nconf');
 var configFile = './config.json';
 var chatsConfig;
-fs.exists(process.env.CONFIG_FILE, function(exists) {
+fs.exists(process.env.CONFIG_FILE, function (exists) {
     if (exists) {
         configFile = process.env.CONFIG_FILE;
-        console.log ('Loading config: ' + configFile);
+        logger.info('Loading config: ' + configFile);
     }
     nconf.use('file', {file: configFile});
     nconf.load();
     chatsConfig = nconf.get('chats');
 });
 
-autostart.isAutostartEnabled(process.env.npm_package_name, function (err, isEnabled) {
-    if (!isEnabled) {
-        autostart.enableAutostart(process.env.npm_package_name, 'npm start', process.cwd(), function (err) {
-            if(err) console.error(err);
-            console.log('Autostart is jenbot ' + isEnabled ? 'enabled' : 'not enabled');
-        });
-    }
-});
+if (process.env.npm_package_name) {
+    autostart.isAutostartEnabled(process.env.npm_package_name, function (err, isEnabled) {
+        if (!isEnabled) {
+            autostart.enableAutostart(process.env.npm_package_name, 'npm start', process.cwd(), function (err) {
+                if (err) {
+                    logger.error(err);
+                }
+                logger.info('Autostart is jenbot ' + isEnabled ? 'enabled' : 'not enabled');
+            });
+        }
+    });
+}
 
 // Setup Restify Server
 var server = restify.createServer();
 server.listen(process.env.port || process.env.PORT || 3978, function () {
-    console.log('%s listening to %s', server.name, server.url);
+    logger.info('%s listening to %s', server.name, server.url);
 });
 
 // Create chat connector for communicating with the Bot Framework Service
@@ -77,15 +91,19 @@ function selectMessage(event, query) {
             }
             break;
         case 'jenkins.queue.onleft':
-            return query.cancelled==='true' ? 'Задача ' + getJobUrl(query.job) + ' удалена из очереди' : '';
+            return query.cancelled === 'true' ? 'Задача ' + getJobUrl(query.job) + ' удалена из очереди' : '';
 
         case 'jenkins.job.started':
             return 'Задача ' + getJobUrl(query.job) + ' запущена';
         case 'jenkins.job.completed':
             var result;
             switch (query.status) {
-                case 'FAILURE': result = 'завершилась ошибкой'; break;
-                case 'NOT_BUILT': result = 'была отменена'; break;
+                case 'FAILURE':
+                    result = 'завершилась ошибкой';
+                    break;
+                case 'NOT_BUILT':
+                    result = 'была отменена';
+                    break;
                 default:
                     result = 'собрана успешно';
             }
@@ -95,60 +113,64 @@ function selectMessage(event, query) {
 }
 
 var jenkinsHook = function (req, res) {
-    var url = URL.parse(req.url, true);
-    // console.log(url.query);
-    // var params = JSON.parse(url.query);
-    // console.log(params);
-    var event = url.query.event;
-    var job = url.query.job;
-    var computer = url.query.computer;
-    var message = selectMessage(event, url.query);
-    // console.log(event);
-    if (!event || message === '') {
-        res.writeHead(200, {'Content-Type': 'text/json'});
-        res.end("{'result':false}");
-        return
-    }
-    if (job) {
-        chatsConfig.forEach(function (chat) {
-            var builds = chat.build;
-            var found = false;
-            for (var b in builds) {
-                if (builds[b] === job) {
-                    sendProactiveMessage(chat.address, message);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                builds = chat.buildParametrized;
+    try {
+        var url = URL.parse(req.url, true);
+        // logger.info(url.query);
+        // var params = JSON.parse(url.query);
+        // logger.info(params);
+        var event = url.query.event;
+        var job = url.query.job;
+        var computer = url.query.computer;
+        var message = selectMessage(event, url.query);
+        // logger.info(event);
+        if (!event || message === '') {
+            res.writeHead(200, {'Content-Type': 'text/json'});
+            res.end("{'result':false}");
+            return
+        }
+        if (job) {
+            chatsConfig.forEach(function (chat) {
+                var builds = chat.build;
+                var found = false;
                 for (var b in builds) {
                     if (builds[b] === job) {
+                        sendProactiveMessage(chat.address, message);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    builds = chat.buildParametrized;
+                    for (var b in builds) {
+                        if (builds[b] === job) {
+                            sendProactiveMessage(chat.address, message);
+                            break;
+                        }
+                    }
+                }
+            });
+        } else if (computer) {
+            chatsConfig.forEach(function (chat) {
+                var computers = chat.computers;
+                for (var c in computers) {
+                    if (c === computer) {
                         sendProactiveMessage(chat.address, message);
                         break;
                     }
                 }
-            }
-        });
-    } else if (computer) {
-        chatsConfig.forEach(function (chat) {
-            var computers = chat.computers;
-            for (var c in computers) {
-                if (c === computer) {
-                    sendProactiveMessage(chat.address, message);
-                    break;
-                }
-            }
-        });
-    } else {
-        chatsConfig.forEach(function (chat) {
-            sendProactiveMessage(chat.address, message);
-        });
+            });
+        } else {
+            chatsConfig.forEach(function (chat) {
+                sendProactiveMessage(chat.address, message);
+            });
+        }
+
+
+        res.writeHead(200, {'Content-Type': 'text/json'});
+        res.end("{'result':true}");
+    } catch (e) {
+        logger.error(e);
     }
-
-
-    res.writeHead(200, {'Content-Type': 'text/json'});
-    res.end("{'result':true}");
 };
 
 // Listen Jenkins events
@@ -175,7 +197,7 @@ function doInit(session, project) {
                         console.error(err.message);
                         return;
                     }
-                    console.log('Чат ' + project + ':' + session.message.address + ' проинициализирован');
+                    logger.trace('Чат ' + project + ':' + session.message.address + ' проинициализирован');
                 });
                 session.conversationData['project'] = project;
                 session.save();
@@ -210,14 +232,22 @@ function preInit(session) {
 }
 
 var bot = new builder.UniversalBot(connector, function (session) {
+    try {
+        processMessage(session);
+    } catch (e) {
+        logger.error(e);
+    }
+});
+
+function processMessage(session) {
     preInit(session);
 
     var message = session.message.text;
     var command = findCommand(message).toLowerCase();
     var args = findArgs(message);
 
-    console.log(command);
-    console.log(args);
+    logger.trace(command);
+    logger.trace(args);
     if (command === null) {
         return
     }
@@ -260,7 +290,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
             if (job) {
                 var callback = function (err, data) {
                     if (err) {
-                        console.log(err);
+                        logger.error(err);
                         return;
                     }
 
@@ -269,7 +299,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
                         if (!session.conversationData.queued || session.conversationData.queued instanceof Array) {
                             session.conversationData.queued = {};
                         }
-                        console.log(session.conversationData.queued);
+                        logger.trace(session.conversationData.queued);
                         session.conversationData.queued[job] = queueId;
                         session.save();
                     }
@@ -286,7 +316,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
                                 params[t] = true
                             }
                         });
-                        console.log(params);
+                        logger.trace(params);
                     }
                     jenkins.build_with_params(job, params, callback);
                 } else {
@@ -308,15 +338,15 @@ var bot = new builder.UniversalBot(connector, function (session) {
                 job = chatOptions.buildParametrized[args[0]];
             }
 
-            console.log('cancel ' + job + ' ' + session.conversationData.queued[job]);
+            logger.trace('cancel ' + job + ' ' + session.conversationData.queued[job]);
             if (job && session.conversationData.queued[job]) {
                 jenkins.cancel_item(session.conversationData.queued[job], function (err, data) {
                     if (err) {
-                        console.log(err);
+                        logger.error(err);
                         return;
                     }
 
-                    console.log(data)
+                    logger.trace(data)
                 });
                 session.conversationData.queued[job] = null;
                 session.save();
@@ -332,7 +362,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
         default:
             session.beginDialog('/help');
     }
-});
+}
 
 bot.set('persistConversationData', true);
 
@@ -380,7 +410,7 @@ bot.dialog('/check', [
             var deferred = when.defer();
             jenkins.last_build_info(job, function (err, data) {
                 if (err) {
-                    console.log(err);
+                    logger.error(err);
                 } else {
                     var status = data.result === 'SUCCESS' ? '😊' : '😣';
                     resultMessage += getJobUrl(job) + ' ' + status + '<br/>';
@@ -437,18 +467,18 @@ function getRest(url, args, callback) {
     });
 
     req.on('requestTimeout', function (req) {
-        console.log('request has expired');
+        logger.error('request has expired');
         req.abort();
         callback('requestTimeout', null);
     });
 
     req.on('responseTimeout', function (res) {
-        console.log('response has expired');
+        logger.error('response has expired');
         callback('responseTimeout', null);
     });
 
     req.on('error', function (err) {
-        console.log('request error', err);
+        logger.error('request error', err);
         callback('error', null);
     });
 }
@@ -470,7 +500,7 @@ function authJira(callback) {
         }
     };
 
-    client.post(getJiraUrl() + "/rest/auth/1/session", loginArgs, function(data, response){
+    client.post(getJiraUrl() + "/rest/auth/1/session", loginArgs, function (data, response) {
         if (response.statusCode === 200) {
             var session = data.session;
             callback(session.name + '=' + session.value);
@@ -582,7 +612,7 @@ function commits(session, detail) {
 }
 
 function sendProactiveMessage(address, message) {
-    console.log(message);
+    logger.trace(message);
     var msg = new builder.Message().address(address);
     msg.text(message);
     msg.textLocale('ru-RU');

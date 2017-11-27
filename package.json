@@ -19,6 +19,7 @@
     "dotenv": "^4.0.0",
     "fs": "0.0.1-security",
     "jenkins-api": "^0.3.1",
+    "log4js": "^2.3.12",
     "nconf": "^0.8.5",
     "net-ping": "^1.2.1",
     "node-autostart": "^3.0.3",
