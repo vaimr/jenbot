@@ -150,7 +150,23 @@ var jenkinsHook = function (req, res) {
                     for (var b in builds) {
                         if (builds[b] === job) {
                             sendProactiveMessage(chat.address, message);
+                            found = true;
                             break;
+                        }
+                    }
+                }
+                if (!found) {
+                    if (session.conversationData.started && session.conversationData.started[job]) {
+                        if (event !== 'jenkins.job.started') {
+                            session.conversationData.started[job] = false;
+                            session.save();
+                        }
+                        builds = chat.check;
+                        for (var b in builds) {
+                            if (builds[b] === job) {
+                                sendProactiveMessage(chat.address, message);
+                                break;
+                            }
                         }
                     }
                 }
@@ -170,7 +186,6 @@ var jenkinsHook = function (req, res) {
                 sendProactiveMessage(chat.address, message);
             });
         }
-
 
         res.writeHead(200, {'Content-Type': 'text/json'});
         res.end("{'result':true}");
@@ -314,6 +329,13 @@ function processMessage(session) {
                 var params = {depth: 1};
                 if (isBuildJob) {
                     params['delay'] = process.env.BUILD_DELAY || '600sec';
+                } else {
+                    if (!session.conversationData.started || session.conversationData.started instanceof Array) {
+                        session.conversationData.started = {};
+                    }
+                    logger.trace(session.conversationData.started);
+                    session.conversationData.started[job] = true;
+                    session.save();
                 }
                 if (isParametrized) {
                     if (1 < args.length) {
