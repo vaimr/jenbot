@@ -26,6 +26,9 @@ var logger = log4js.getLogger('app');
 var nconf = require('nconf');
 var configFile = './config.json';
 var chatsConfig;
+
+var startedJobs = {};
+
 fs.exists(process.env.CONFIG_FILE, function (exists) {
     if (exists) {
         configFile = process.env.CONFIG_FILE;
@@ -156,10 +159,9 @@ var jenkinsHook = function (req, res) {
                     }
                 }
                 if (!found) {
-                    if (session.conversationData.started && session.conversationData.started[job]) {
+                    if (startedJobs[chat.name + ":" + job]) {
                         if (event !== 'jenkins.job.started') {
-                            session.conversationData.started[job] = false;
-                            session.save();
+                            startedJobs[chat.name + ":" + job] = false;
                         }
                         builds = chat.check;
                         for (var b in builds) {
@@ -330,12 +332,8 @@ function processMessage(session) {
                 if (isBuildJob) {
                     params['delay'] = process.env.BUILD_DELAY || '600sec';
                 } else {
-                    if (!session.conversationData.started || session.conversationData.started instanceof Array) {
-                        session.conversationData.started = {};
-                    }
-                    logger.trace(session.conversationData.started);
-                    session.conversationData.started[job] = true;
-                    session.save();
+                    logger.trace(startedJobs);
+                    startedJobs[chatOptions.name + ":" + job] = true;
                 }
                 if (isParametrized) {
                     if (1 < args.length) {
