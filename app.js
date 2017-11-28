@@ -159,11 +159,11 @@ var jenkinsHook = function (req, res) {
                     }
                 }
                 if (!found) {
-                    var url = url.query.url;
-                    if (url) {
+                    var jobUrl = url.query.jobUrl;
+                    if (jobUrl) {
                         logger.trace('hook. started jobs: ' + startedJobs);
                         var startedKey = chat.name + ":" +
-                            url.replace(/job\//, '').replace(/\/$/, '');
+                            jobUrl.replace(/job\//, '').replace(/\/$/, '');
                         logger.trace('started key: ' + startedKey);
                         if (startedJobs[startedKey]) {
                             if (event !== 'jenkins.job.started') {
