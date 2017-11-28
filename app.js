@@ -104,6 +104,9 @@ function selectMessage(event, query) {
                 case 'NOT_BUILT':
                     result = 'была отменена';
                     break;
+                case 'ABORTED':
+                    result = 'была прервана';
+                    break;
                 default:
                     result = 'собрана успешно';
             }
