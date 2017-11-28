@@ -107,6 +107,9 @@ function selectMessage(event, query) {
                 case 'ABORTED':
                     result = 'была прервана';
                     break;
+                case 'UNSTABLE':
+                    result = 'собрана. Не стабильна';
+                    break;
                 default:
                     result = 'собрана успешно';
             }
