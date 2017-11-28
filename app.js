@@ -264,6 +264,10 @@ var bot = new builder.UniversalBot(connector, function (session) {
     }
 });
 
+function getDelay() {
+    return process.env.BUILD_DELAY || '600sec';
+}
+
 function processMessage(session) {
     preInit(session);
 
@@ -332,7 +336,7 @@ function processMessage(session) {
                 //todo разобраться с параметрами
                 var params = {depth: 1};
                 if (isBuildJob) {
-                    params['delay'] = process.env.BUILD_DELAY || '600sec';
+                    params['delay'] = getDelay();
                 } else {
                     logger.trace('start. started jobs : ' + startedJobs);
                     startedJobs[chatOptions.name + ":" + job] = true;
@@ -405,10 +409,10 @@ bot.dialog('/help', [
             var jobs = [];
             if (chatOptions !== null) {
                 for (var b in chatOptions.build) {
-                    jobs.push(b)
+                    jobs.push(b + ' (таймаут ' + getDelay() + ')');
                 }
                 for (var b in chatOptions.buildParametrized) {
-                    jobs.push(b)
+                    jobs.push(b + ' (таймаут ' + getDelay() + ')')
                 }
                 chatOptions.check.forEach(function (job) {
                     jobs.push(job)
