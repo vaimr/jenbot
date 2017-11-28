@@ -159,16 +159,17 @@ var jenkinsHook = function (req, res) {
                     }
                 }
                 if (!found) {
-                    if (startedJobs[chat.name + ":" + job]) {
-                        if (event !== 'jenkins.job.started') {
-                            startedJobs[chat.name + ":" + job] = false;
-                        }
-                        builds = chat.check;
-                        for (var b in builds) {
-                            if (builds[b] === job) {
-                                sendProactiveMessage(chat.address, message);
-                                break;
+                    var url = url.query.url;
+                    if (url) {
+                        logger.trace('hook. started jobs: ' + startedJobs);
+                        var startedKey = chat.name + ":" +
+                            url.replace(/job\//, '').replace(/\/$/, '');
+                        logger.trace('started key: ' + startedKey);
+                        if (startedJobs[startedKey]) {
+                            if (event !== 'jenkins.job.started') {
+                                startedJobs[startedKey] = false;
                             }
+                            sendProactiveMessage(chat.address, message);
                         }
                     }
                 }
@@ -332,7 +333,7 @@ function processMessage(session) {
                 if (isBuildJob) {
                     params['delay'] = process.env.BUILD_DELAY || '600sec';
                 } else {
-                    logger.trace(startedJobs);
+                    logger.trace('start. started jobs : ' + startedJobs);
                     startedJobs[chatOptions.name + ":" + job] = true;
                 }
                 if (isParametrized) {
