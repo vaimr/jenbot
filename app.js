@@ -70,7 +70,8 @@ var jenkins = jenkinsapi.init("https://" + process.env.JENKINS_TOKEN + "@" + pro
 server.post('/api/messages', connector.listen());
 
 function getJobUrl(job) {
-    return "[" + job + "](https://" + process.env.JENKINS_URL + "/job/" + job + ")";
+    return "[" + job.replace(/job\//, '') + "](https://" + process.env.JENKINS_URL +
+        (job.startsWith('/job') ? job : "/job/" + job) + ")";
 }
 
 function selectMessage(event, query) {
@@ -97,7 +98,7 @@ function selectMessage(event, query) {
             return query.cancelled === 'true' ? 'Задача ' + getJobUrl(query.job) + ' удалена из очереди' : '';
 
         case 'jenkins.job.started':
-            return 'Задача ' + getJobUrl(query.job) + ' запущена';
+            return 'Задача ' + getJobUrl(query.jobUrl) + ' запущена';
         case 'jenkins.job.completed':
             var result;
             switch (query.status) {
@@ -116,7 +117,7 @@ function selectMessage(event, query) {
                 default:
                     result = 'собрана успешно';
             }
-            return 'Задача ' + getJobUrl(query.job) + ' ' + result;
+            return 'Задача ' + getJobUrl(query.jobUrl) + ' ' + result;
     }
     return ''
 }
