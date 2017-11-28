@@ -71,7 +71,7 @@ server.post('/api/messages', connector.listen());
 
 function getJobUrl(job) {
     return "[" + job.replace(/job\//, '') + "](https://" + process.env.JENKINS_URL +
-        (job.startsWith('/job') ? job : "/job/" + job) + ")";
+        (job.startsWith('job/') ? '/' + job : "/job/" + job) + ")";
 }
 
 function selectMessage(event, query) {
