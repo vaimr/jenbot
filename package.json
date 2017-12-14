@@ -24,6 +24,7 @@
     "net-ping": "^1.2.1",
     "node-autostart": "^3.0.3",
     "node-rest-client": "^3.1.0",
+    "node-schedule": "^1.2.5",
     "process-env": "^1.1.0",
     "restify": "^6.2.3",
     "url": "^0.11.0",

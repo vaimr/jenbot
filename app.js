@@ -12,6 +12,8 @@ var lookup = require('dns-lookup');
 var when = require('when');
 var Client = require('node-rest-client').Client;
 var Set = require("collections/set");
+var schedule = require('node-schedule');
+
 var log4js = require('log4js');
 log4js.configure({
     appenders: {
@@ -37,6 +39,14 @@ fs.exists(process.env.CONFIG_FILE, function (exists) {
     nconf.use('file', {file: configFile});
     nconf.load();
     chatsConfig = nconf.get('chats');
+
+    chatsConfig.forEach(function (chat) {
+        var j = schedule.scheduleJob(chat.checkTime, function () {
+            checkChat(chat, function (resultMessage) {
+                sendProactiveMessage(chat.address, resultMessage);
+            });
+        });
+    });
 });
 
 if (process.env.npm_package_name) {
@@ -90,34 +100,39 @@ function selectMessage(event, query) {
 
         case 'jenkins.queue.enter.waiting':
             var t = new Date().getTime() + 1000;
-            if (t < parseInt(query.timestamp)) {
-                return 'Задача ' + getJobUrl(query.job) + ' поставлена в очередь';
+            var startTime = parseInt(query.timestamp);
+            if (t < startTime) {
+                return 'Задача ' + getJobUrl(query.job) + ' поставлена в очередь. Запуск через ' + (Math.round((startTime - t) / 600) * 100) + ' сек.' ;
             }
             break;
         case 'jenkins.queue.onleft':
             return query.cancelled === 'true' ? 'Задача ' + getJobUrl(query.job) + ' удалена из очереди' : '';
-
         case 'jenkins.job.started':
-            return 'Задача ' + getJobUrl(query.jobUrl) + ' запущена';
-        case 'jenkins.job.completed':
-            var result;
-            switch (query.status) {
-                case 'FAILURE':
-                    result = 'завершилась ошибкой';
-                    break;
-                case 'NOT_BUILT':
-                    result = 'была отменена';
-                    break;
-                case 'ABORTED':
-                    result = 'была прервана';
-                    break;
-                case 'UNSTABLE':
-                    result = 'собрана. Не стабильна';
-                    break;
-                default:
-                    result = 'собрана успешно';
+            if (!(/timer$/.test(query.startedBy))) {
+                return 'Задача ' + getJobUrl(query.jobUrl) + ' запущена. ' + query.startedBy;
             }
-            return 'Задача ' + getJobUrl(query.jobUrl) + ' ' + result;
+            break;
+        case 'jenkins.job.completed':
+            if (!(/timer$/.test(query.startedBy))) {
+                var result;
+                switch (query.status) {
+                    case 'FAILURE':
+                        result = 'завершилась ошибкой';
+                        break;
+                    case 'NOT_BUILT':
+                        result = 'была отменена';
+                        break;
+                    case 'ABORTED':
+                        result = 'была прервана';
+                        break;
+                    case 'UNSTABLE':
+                        result = 'собрана. Не стабильна';
+                        break;
+                    default:
+                        result = 'собрана успешно';
+                }
+                return 'Задача ' + getJobUrl(query.jobUrl) + ' ' + result;
+            }
     }
     return ''
 }
@@ -125,9 +140,9 @@ function selectMessage(event, query) {
 var jenkinsHook = function (req, res) {
     try {
         var url = URL.parse(req.url, true);
-        // logger.info(url.query);
-        // var params = JSON.parse(url.query);
-        // logger.info(params);
+        logger.trace(url.query);
+        var params = JSON.parse(url.query);
+        logger.trace(params);
         var event = url.query.event;
         var job = url.query.job;
         var computer = url.query.computer;
@@ -435,28 +450,37 @@ bot.dialog('/help', [
 bot.dialog('/check', [
     function (session) {
         var chatOptions = getChatOptions(session.message.address.id);
-        var promises = [];
-        var resultMessage = '';
-
-        chatOptions.check.forEach(function (job) {
-            var deferred = when.defer();
-            jenkins.last_build_info(job, function (err, data) {
-                if (err) {
-                    logger.error(err);
-                } else {
-                    var status = data.result === 'SUCCESS' ? '😊' : '😣';
-                    resultMessage += getJobUrl(job) + ' ' + status + '<br/>';
-                }
-                deferred.resolve('ok');
-            });
-            promises.push(deferred.promise);
-        });
-
-        when.all(promises).then(function () {
-            session.endDialog(resultMessage);
+        checkChat(chatOptions, function (resultMessage) {
+          session.endDialog(resultMessage);
         });
     }
 ]);
+
+function checkChat(chatOptions, callback) {
+    var promises = [];
+    var resultMessage = '';
+
+    var checkFunc = function (job) {
+        var deferred = when.defer();
+        jenkins.last_build_info(job, function (err, data) {
+            if (err) {
+                logger.error(err);
+            } else {
+                var status = data.result === 'SUCCESS' ? '(sun)' : '(rain)';
+                resultMessage += getJobUrl(job) + ' ' + status + '<br/>';
+            }
+            deferred.resolve('ok');
+        });
+        promises.push(deferred.promise);
+    };
+
+    chatOptions.check.forEach(checkFunc(job));
+    chatOptions.build.forEach(checkFunc(job));
+    chatOptions.buildParametrized.forEach(checkFunc(job));
+    when.all(promises).then(function () {
+        callback(resultMessage);
+    });
+}
 
 bot.dialog('/ping', [
     function (session) {
@@ -478,7 +502,7 @@ bot.dialog('/ping', [
                         if (error)
                             resultMessage += t + ': ' + error.toString() + ' (' + address + ')<br/>';
                         else
-                            resultMessage += t + ': Доступен (' + address + ')<br/>';
+                            resultMessage += t + ': доступен (' + address + ')<br/>';
                         deferred.resolve('ok');
                     });
                 }

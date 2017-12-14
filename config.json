@@ -3,6 +3,7 @@
     {
       "address": {},
       "name": "smev",
+      "checkTime": "0 0 10 * * *",
       "check": [
         "smev-core/job/dev",
         "smev-pmv/job/dev",
