@@ -20,7 +20,7 @@ log4js.configure({
         app: {type: 'dateFile', filename: process.env.LOGS_DIR + 'app.log', pattern: '-yyyy-MM-dd'},
         con: {type: 'console'}
         },
-    categories: {default: {appenders: ['app', 'con'], level: 'info'}}
+    categories: {default: {appenders: ['app', 'con'], level: 'trace'}}
 });
 
 var logger = log4js.getLogger('app');
@@ -141,8 +141,6 @@ var jenkinsHook = function (req, res) {
     try {
         var url = URL.parse(req.url, true);
         logger.trace(url.query);
-        var params = JSON.parse(url.query);
-        logger.trace(params);
         var event = url.query.event;
         var job = url.query.job;
         var computer = url.query.computer;
@@ -475,8 +473,12 @@ function checkChat(chatOptions, callback) {
     };
 
     chatOptions.check.forEach(checkFunc(job));
-    chatOptions.build.forEach(checkFunc(job));
-    chatOptions.buildParametrized.forEach(checkFunc(job));
+    for (var b in chatOptions.build) {
+        checkFunc(chatOptions.build[b]);
+    }
+    for (var b in chatOptions.buildParametrized) {
+        checkFunc(chatOptions.buildParametrized[b]);
+    }
     when.all(promises).then(function () {
         callback(resultMessage);
     });
