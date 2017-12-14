@@ -472,7 +472,9 @@ function checkChat(chatOptions, callback) {
         promises.push(deferred.promise);
     };
 
-    chatOptions.check.forEach(checkFunc(job));
+    chatOptions.check.forEach(function (job) {
+        checkFunc(job)
+    });
     for (var b in chatOptions.build) {
         checkFunc(chatOptions.build[b]);
     }
