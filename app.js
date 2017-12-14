@@ -282,7 +282,6 @@ function getDelay() {
 }
 
 function processMessage(session) {
-    session.sendTyping();
     preInit(session);
 
     var message = session.message.text;
@@ -299,6 +298,7 @@ function processMessage(session) {
         session.send('Неизвестный идентификатор чата ' + session.message.address.id + ". Отправьте боту init **&lt;код чата&gt;**");
         return
     }
+    session.sendTyping();
     var job;
     switch (command) {
         case 'init':
