@@ -102,7 +102,7 @@ function selectMessage(event, query) {
             var t = new Date().getTime() + 1000;
             var startTime = parseInt(query.timestamp);
             if (t < startTime) {
-                return 'Задача ' + getJobUrl(query.job) + ' поставлена в очередь. Запуск через ' + (Math.round((startTime - t) / 600) * 100) + ' сек.' ;
+                return 'Задача ' + getJobUrl(query.job) + ' поставлена в очередь. Запуск через ' + (Math.round((startTime - t) / 1000)) + ' сек.' ;
             }
             break;
         case 'jenkins.queue.onleft':
