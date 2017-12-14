@@ -282,6 +282,7 @@ function getDelay() {
 }
 
 function processMessage(session) {
+    session.sendTyping();
     preInit(session);
 
     var message = session.message.text;
